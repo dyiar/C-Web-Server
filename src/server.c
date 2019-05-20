@@ -55,9 +55,21 @@ int send_response(int fd, char *header, char *content_type, void *body, int cont
 
     // Build HTTP response and store it in response
 
-    ///////////////////
-    // IMPLEMENT ME! //
-    ///////////////////
+    time_t rawtime;
+    struct tm *info;
+    time(&rawtime);
+    info = localtime(&rawtime);
+
+    int response_length = sprintf(response, "%s\n"
+                      "Date: %s"
+                      "Connection: close\n"
+                      "Content-Length: %d\n"
+                      "Content-Type: %s\n"
+                      "\n"
+                      "%s\n", header, asctime(info), content_length, content_type, (char *)body);
+
+    // int response_length = strlen(header) + content_length;
+
 
     // Send it all!
     int rv = send(fd, response, response_length, 0);
@@ -157,7 +169,7 @@ void handle_http_request(int fd, struct cache *cache)
     ///////////////////
     // IMPLEMENT ME! //
     ///////////////////
-
+    resp_404(fd);
     // Read the first two components of the first line of the request 
  
     // If GET, handle the get endpoints
@@ -197,6 +209,8 @@ int main(void)
     while(1) {
         socklen_t sin_size = sizeof their_addr;
 
+        
+
         // Parent process will block on the accept() call until someone
         // makes a new connection:
         newfd = accept(listenfd, (struct sockaddr *)&their_addr, &sin_size);
@@ -204,6 +218,8 @@ int main(void)
             perror("accept");
             continue;
         }
+
+        // resp_404(newfd);
 
         // Print out a message that we got the connection
         inet_ntop(their_addr.ss_family,
