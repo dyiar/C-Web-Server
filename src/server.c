@@ -65,8 +65,10 @@ int send_response(int fd, char *header, char *content_type, void *body, int cont
                       "Connection: close\n"
                       "Content-Length: %d\n"
                       "Content-Type: %s\n"
-                      "\n"
-                      "%s\n", header, asctime(info), content_length, content_type, (char *)body);
+                      "\n", header, asctime(info), content_length, content_type);
+
+    memcpy(response + response_length, body, content_length);
+    response_length += content_length;
 
     // int response_length = strlen(header) + content_length;
 
@@ -142,6 +144,26 @@ void get_file(int fd, struct cache *cache, char *request_path)
     ///////////////////
     // IMPLEMENT ME! //
     ///////////////////
+    char filepath[4096];
+    struct file_data *filedata;
+    char *mime_type;
+
+    // printf(request_path);
+    // printf("\n %s%s \n", SERVER_ROOT, request_path);
+
+    snprintf(filepath, sizeof filepath, "%s%s", SERVER_ROOT, request_path);
+    filedata = file_load(filepath);
+
+    if(filedata == NULL) {
+        resp_404(fd);
+    }
+
+    mime_type = mime_type_get(filepath);
+
+    send_response(fd, "HTTP/1.1", mime_type, filedata->data, filedata->size);
+
+    file_free(filedata);
+
 }
 
 /**
@@ -194,8 +216,8 @@ void handle_http_request(int fd, struct cache *cache)
         if(strcmp(path, "/d20") == 0) {
             get_d20(fd);
         } else {
-            // get_file(fd, cache, path);
-            resp_404(fd);
+            get_file(fd, cache, path);
+            // resp_404(fd);
         }
     } else {
         resp_404(fd);
