@@ -92,12 +92,20 @@ void get_d20(int fd)
     ///////////////////
     // IMPLEMENT ME! //
     ///////////////////
+    srand(time(NULL));
+    int random_number = rand() % 20 + 1;
+    char number[sizeof random_number];
+    sprintf(number, "%d\n", random_number);
 
     // Use send_response() to send it back as text/plain data
+
+    
 
     ///////////////////
     // IMPLEMENT ME! //
     ///////////////////
+
+    send_response(fd, "HTTP/1.1 D20", "text/plain", number, strlen(number));
 }
 
 /**
@@ -165,14 +173,33 @@ void handle_http_request(int fd, struct cache *cache)
         return;
     }
 
+    char method[200];
+    char path[8192];
+
 
     ///////////////////
     // IMPLEMENT ME! //
     ///////////////////
-    resp_404(fd);
     // Read the first two components of the first line of the request 
+
+    sscanf(request, "%s" "%s", method, path);
  
     // If GET, handle the get endpoints
+
+    printf("%s\n", method);
+    printf("%s\n", path);
+
+
+    if(strcmp(method, "GET") == 0) {
+        if(strcmp(path, "/d20") == 0) {
+            get_d20(fd);
+        } else {
+            // get_file(fd, cache, path);
+            resp_404(fd);
+        }
+    } else {
+        resp_404(fd);
+    }
 
     //    Check if it's /d20 and handle that special case
     //    Otherwise serve the requested file by calling get_file()
