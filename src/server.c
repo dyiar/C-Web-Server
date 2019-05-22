@@ -107,7 +107,7 @@ void get_d20(int fd)
     // IMPLEMENT ME! //
     ///////////////////
 
-    send_response(fd, "HTTP/1.1 D20", "text/plain", number, strlen(number));
+    send_response(fd, "HTTP/1.1 200 OK", "text/plain", number, strlen(number));
 }
 
 /**
@@ -152,17 +152,34 @@ void get_file(int fd, struct cache *cache, char *request_path)
     // printf("\n %s%s \n", SERVER_ROOT, request_path);
 
     snprintf(filepath, sizeof filepath, "%s%s", SERVER_ROOT, request_path);
-    filedata = file_load(filepath);
+    struct cache_entry *cached = cache_get(cache, request_path);
 
-    if(filedata == NULL) {
-        resp_404(fd);
+    if (cached == NULL) {
+        filedata = file_load(filepath);
+        
+        if(filedata == NULL) {
+            resp_404(fd);
+            return;
+        }
+
+        mime_type= mime_type_get(filepath);
+        cache_put(cache, request_path, mime_type, filedata->data, filedata->size);
+
+        send_response(fd, "HTTP/1.1 200 OK", mime_type, filedata->data, filedata->size);
+
+        file_free(filedata);
+    } else {
+        //using filepath to get mime_type because I have access to it from the snprintf above
+        //trying to use the cached->content was giving wrong type and causing file download (i think. fild download doesn't happen when filepath is used to get mime_type)
+        mime_type= mime_type_get(filepath);
+        send_response(fd, "HTTP/1.1 200 OK", mime_type, cached->content, cached->content_length);
     }
+    
+ 
 
-    mime_type = mime_type_get(filepath);
 
-    send_response(fd, "HTTP/1.1", mime_type, filedata->data, filedata->size);
 
-    file_free(filedata);
+
 
 }
 
@@ -208,8 +225,8 @@ void handle_http_request(int fd, struct cache *cache)
  
     // If GET, handle the get endpoints
 
-    printf("%s\n", method);
-    printf("%s\n", path);
+    // printf("%s\n", method);
+    // printf("%s\n", path);
 
 
     if(strcmp(method, "GET") == 0) {
