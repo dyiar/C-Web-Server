@@ -270,7 +270,7 @@ int main(void)
 
     // This is the main loop that accepts incoming connections and
     // responds to the request. The main parent process
-    // then goes back to waiting for new connections.
+    
     
     while(1) {
         socklen_t sin_size = sizeof their_addr;
